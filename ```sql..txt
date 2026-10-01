@@ -1,0 +1,90 @@
+```sql
+-- ===================================================
+-- Task 23: SQL Window Functions Intro
+-- Track: Data Analytics Track
+-- Objective: Learn analytical SQL patterns using ROW_NUMBER, RANK, and LAG
+-- ===================================================
+
+-- Sample Database Setup (for reference)
+CREATE TABLE sales (
+    sale_id INT,
+    employee_name VARCHAR(50),
+    department VARCHAR(50),
+    sale_amount DECIMAL(10,2),
+    sale_date DATE
+);
+
+INSERT INTO sales VALUES
+(1, 'Rama', 'Sales', 500, '2023-10-01'),
+(2, 'Krishna', 'Sales', 700, '2023-10-02'),
+(3, 'Sita', 'Sales', 700, '2023-10-03'),
+(4, 'Ravan', 'Marketing', 300, '2023-10-01'),
+(5, 'Hanuman', 'Marketing', 900, '2023-10-02');
+
+
+-- ===================================================
+-- 1. Compare Ranking Functions: ROW_NUMBER() vs RANK()
+-- ===================================================
+
+-- Query 1: Assigning a unique row number to sales within each department based on sale_amount
+SELECT 
+    sale_id,
+    employee_name,
+    department,
+    sale_amount,
+    ROW_NUMBER() OVER (PARTITION BY department ORDER BY sale_amount DESC) as row_num
+FROM sales;
+
+-- Query 2: Ranking sales within each department (handles ties in sale_amount)
+SELECT 
+    sale_id,
+    employee_name,
+    department,
+    sale_amount,
+    RANK() OVER (PARTITION BY department ORDER BY sale_amount DESC) as rank_num
+FROM sales;
+
+-- Query 3: Comparing ROW_NUMBER vs RANK vs DENSE_RANK side-by-side
+SELECT 
+    sale_id,
+    employee_name,
+    department,
+    sale_amount,
+    ROW_NUMBER() OVER (PARTITION BY department ORDER BY sale_amount DESC) as row_num,
+    RANK() OVER (PARTITION BY department ORDER BY sale_amount DESC) as rank_num,
+    DENSE_RANK() OVER (PARTITION BY department ORDER BY sale_amount DESC) as dense_rank_num
+FROM sales;
+
+
+-- ===================================================
+-- 2. Use LAG for Trend Analysis
+-- ===================================================
+
+-- Query 4: Get previous sale amount to analyze daily sales trends
+SELECT 
+    sale_id,
+    employee_name,
+    sale_date,
+    sale_amount,
+    LAG(sale_amount, 1, 0) OVER (ORDER BY sale_date) as previous_sale_amount
+FROM sales;
+
+-- Query 5: Calculate Difference between current sale and previous sale (Growth/Drop)
+SELECT 
+    sale_id,
+    employee_name,
+    sale_date,
+    sale_amount,
+    LAG(sale_amount, 1) OVER (ORDER BY sale_date) as previous_sale,
+    sale_amount - LAG(sale_amount, 1) OVER (ORDER BY sale_date) as sales_difference
+FROM sales;
+
+-- Query 6: Finding trend by comparing previous sale within each employee's history
+SELECT 
+    employee_name,
+    sale_date,
+    sale_amount,
+    LAG(sale_amount, 1) OVER (PARTITION BY employee_name ORDER BY sale_date) as prev_employee_sale
+FROM sales;
+
+-- Note: You can expand up to 12 queries following similar patterns (e.g., LEAD, Moving Average using AVG() OVER)
